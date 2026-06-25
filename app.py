@@ -53,13 +53,13 @@ def generate_forecast(segment_type, segment_name, horizon):
         return go.Figure().update_layout(title="No forecast available for this selection"), ""
     fc = fc.head(int(horizon))
     
-if seg_key == 'overall':
-    hist = df.groupby('date')['daily_revenue_usd'].sum().reset_index().sort_values('date')
-elif seg_key == 'brand':
-    hist = df[df['brand'] == segment_name].groupby('date')['daily_revenue_usd'].sum().reset_index().sort_values('date')
-else:
-    hist = df[df['site'] == segment_name].groupby('date')['daily_revenue_usd'].sum().reset_index().sort_values('date')
-hist.columns = ['ds', 'y']
+    if seg_key == 'overall':
+     hist = df.groupby('date')['daily_revenue_usd'].sum().reset_index().sort_values('date')
+    elif seg_key == 'brand':
+     hist = df[df['brand'] == segment_name].groupby('date')['daily_revenue_usd'].sum().reset_index().sort_values('date')
+    else:
+     hist = df[df['site'] == segment_name].groupby('date')['daily_revenue_usd'].sum().reset_index().sort_values('date')
+    hist.columns = ['ds', 'y']
     
     color = COLORS.get(segment_name, '#1e2d5e')
     fig = go.Figure()
