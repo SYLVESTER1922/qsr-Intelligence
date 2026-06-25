@@ -300,140 +300,155 @@ def chat(message, history):
 # ═══════════════════════════════════════════════════════════════
 # TAB 3 — ANALYTICS DASHBOARD
 # ═══════════════════════════════════════════════════════════════
-
 def build_dashboard():
-    # 1. Brand revenue
-    brand_rev = df.groupby('brand')['daily_revenue_usd'].sum().sort_values(ascending=True).reset_index()
-    fig1 = go.Figure(go.Bar(
-        x=brand_rev['daily_revenue_usd'], y=brand_rev['brand'],
-        orientation='h',
-        marker=dict(color=['#9b59b6','#e74c3c','#2ecc71','#c9a84c'],
-                    line=dict(color='#0a1628', width=1)),
-        text=[fmt_val(v) for v in brand_rev['daily_revenue_usd']],
-        textposition='outside', textfont=dict(color='#c8d8f0', size=12),
-        hovertemplate='%{y}<br>Revenue: $%{x:,.0f}<extra></extra>'
-    ))
-    fig1.update_layout(
-        **dark_layout("Total Revenue by Brand (2020–2021)", height=300,
-                      margin=dict(l=150, r=90, t=50, b=40)),
-        xaxis=dict(title="Revenue (USD)", gridcolor='#1a3a6e', linecolor='#1a3a6e',
-                   tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0'),
-                   tickformat="$,.0f",
-                   range=[0, brand_rev['daily_revenue_usd'].max() * 1.30]),
-        yaxis=dict(tickfont=dict(color='#c8d8f0')),
-    )
-
-    # 2. Site revenue
-    site_rev = df.groupby('site')['daily_revenue_usd'].sum().sort_values(ascending=True).reset_index()
-    colors_site = ['#34495e','#34495e','#1abc9c','#9b59b6','#e74c3c','#2ecc71','#c9a84c','#c9a84c']
-    fig2 = go.Figure(go.Bar(
-        x=site_rev['daily_revenue_usd'], y=site_rev['site'],
-        orientation='h',
-        marker=dict(color=colors_site, line=dict(color='#0a1628', width=1)),
-        text=[fmt_val(v) for v in site_rev['daily_revenue_usd']],
-        textposition='outside', textfont=dict(color='#c8d8f0', size=11),
-        hovertemplate='%{y}<br>Revenue: $%{x:,.0f}<extra></extra>'
-    ))
-    fig2.update_layout(
-        **dark_layout("Total Revenue by Site (2020–2021)", height=380,
-                      margin=dict(l=165, r=90, t=50, b=40)),
-        xaxis=dict(title="Revenue (USD)", gridcolor='#1a3a6e', linecolor='#1a3a6e',
-                   tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0'),
-                   tickformat="$,.0f",
-                   range=[0, site_rev['daily_revenue_usd'].max() * 1.32]),
-        yaxis=dict(tickfont=dict(color='#c8d8f0')),
-    )
-
-    # 3. Monthly trend
-    monthly = df.groupby(df['date'].dt.to_period('M'))['daily_revenue_usd'].sum().reset_index()
-    monthly['date'] = monthly['date'].astype(str)
-    fig3 = go.Figure()
-    fig3.add_trace(go.Scatter(
-        x=monthly['date'], y=monthly['daily_revenue_usd'],
-        mode='lines+markers',
-        line=dict(color='#c9a84c', width=2.5),
-        marker=dict(size=5, color='#c9a84c', line=dict(color='#0a1628', width=1)),
-        fill='tozeroy', fillcolor='rgba(201,168,76,0.08)',
-        hovertemplate='%{x}<br>Revenue: $%{y:,.0f}<extra></extra>'
-    ))
-    fig3.add_shape(type="rect", x0="2020-03", x1="2020-06", y0=0, y1=1, yref="paper",
-                   fillcolor="red", opacity=0.08, line_width=0)
-    fig3.add_annotation(x="2020-04", y=0.88, yref="paper", text="COVID-19<br>Impact",
-                        showarrow=False, font=dict(color="#ff6b6b", size=10),
-                        bgcolor="rgba(10,22,40,0.65)", borderpad=3)
-    fig3.update_layout(
-        **dark_layout("Monthly Revenue Trend (2020–2021)", height=360,
-                      margin=dict(l=80, r=40, t=50, b=80)),
-        xaxis=dict(title="Month", tickangle=45, gridcolor='#1a3a6e',
-                   tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0')),
-        yaxis=dict(title="Revenue (USD)", tickprefix="$", tickformat=",.0f",
-                   gridcolor='#1a3a6e', tickfont=dict(color='#c8d8f0'),
-                   title_font=dict(color='#a8c8f0')),
-        showlegend=False
-    )
-
-    # 4. Day of week
-    dow_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-    dow = df.groupby(df['date'].dt.day_name())['daily_revenue_usd'].mean().reindex(dow_order).reset_index()
-    dow.columns = ['day', 'avg_revenue']
-    fig4 = go.Figure(go.Bar(
-        x=dow['day'], y=dow['avg_revenue'],
-        marker=dict(color=['#c9a84c' if d == 'Sunday' else '#1e3a6e' for d in dow['day']],
-                    line=dict(color='#c9a84c', width=0.8)),
-        text=[f"${v:,.0f}" for v in dow['avg_revenue']],
-        textposition='outside', textfont=dict(color='#c8d8f0', size=11),
-        hovertemplate='%{x}<br>Avg: $%{y:,.0f}<extra></extra>'
-    ))
-    fig4.update_layout(
-        **dark_layout("Avg Daily Revenue by Day of Week", height=320,
-                      margin=dict(l=80, r=40, t=50, b=40)),
-        xaxis=dict(title="Day", tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0')),
-        yaxis=dict(title="Avg Revenue (USD)", tickprefix="$", tickformat=",.0f",
-                   gridcolor='#1a3a6e', tickfont=dict(color='#c8d8f0'),
-                   title_font=dict(color='#a8c8f0'),
-                   range=[0, dow['avg_revenue'].max() * 1.28])
-    )
-
-    # 5. YoY by brand
-    yoy = df.groupby([df['date'].dt.year, 'brand'])['daily_revenue_usd'].sum().reset_index()
-    yoy.columns = ['year', 'brand', 'revenue']
-    bc = {'Crust Co.': '#c9a84c', 'Flame & Feather': '#2ecc71',
-          'Cala Grill': '#e74c3c', 'Frostbite Creamery': '#9b59b6'}
-    fig5 = go.Figure()
-    for brand in BRANDS:
-        b = yoy[yoy['brand'] == brand]
-        fig5.add_trace(go.Bar(
-            x=b['year'].astype(str), y=b['revenue'], name=brand,
-            marker=dict(color=bc.get(brand, '#c9a84c'), line=dict(color='#0a1628', width=1)),
-            text=[fmt_val(v) for v in b['revenue']],
-            textposition='outside', textfont=dict(color='#c8d8f0', size=10),
-            hovertemplate='%{x}<br>%{fullData.name}: $%{y:,.0f}<extra></extra>'
+    figs = []
+    
+    try:
+        brand_rev = df.groupby('brand')['daily_revenue_usd'].sum().sort_values(ascending=True).reset_index()
+        fig1 = go.Figure(go.Bar(
+            x=brand_rev['daily_revenue_usd'], y=brand_rev['brand'],
+            orientation='h',
+            marker=dict(color=['#9b59b6','#e74c3c','#2ecc71','#c9a84c'],
+                        line=dict(color='#0a1628', width=1)),
+            text=[fmt_val(v) for v in brand_rev['daily_revenue_usd']],
+            textposition='outside', textfont=dict(color='#c8d8f0', size=12),
         ))
-    fig5.update_layout(
-        **dark_layout("Year-on-Year Revenue by Brand", height=340,
-                      margin=dict(l=80, r=40, t=50, b=40)),
-        barmode='group',
-        xaxis=dict(title="Year", tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0')),
-        yaxis=dict(title="Revenue (USD)", tickprefix="$", tickformat=",.0f",
-                   gridcolor='#1a3a6e', tickfont=dict(color='#c8d8f0'),
-                   title_font=dict(color='#a8c8f0'))
-    )
+        fig1.update_layout(**dark_layout("Total Revenue by Brand (2020–2021)", height=300,
+                          margin=dict(l=150, r=90, t=50, b=40)),
+            xaxis=dict(title="Revenue (USD)", gridcolor='#1a3a6e', linecolor='#1a3a6e',
+                       tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0'),
+                       tickformat="$,.0f",
+                       range=[0, brand_rev['daily_revenue_usd'].max() * 1.30]),
+            yaxis=dict(tickfont=dict(color='#c8d8f0')),
+        )
+    except Exception as ex:
+        fig1 = go.Figure()
+        fig1.update_layout(title=f"Brand chart error: {ex}", paper_bgcolor='#0a1628',
+                           font=dict(color='red'))
 
-    # 6. Revenue share pie
-    site_rev2 = df.groupby('site')['daily_revenue_usd'].sum().reset_index()
-    fig6 = go.Figure(go.Pie(
-        labels=site_rev2['site'], values=site_rev2['daily_revenue_usd'],
-        hole=0.45,
-        marker=dict(colors=['#c9a84c','#1e2d5e','#2ecc71','#e74c3c',
-                            '#9b59b6','#1abc9c','#f39c12','#34495e'],
-                    line=dict(color='#0a1628', width=2)),
-        textfont=dict(color='#ffffff', size=11),
-        hovertemplate='%{label}<br>$%{value:,.0f}<br>%{percent}<extra></extra>'
-    ))
-    fig6.update_layout(
-        **dark_layout("Revenue Share by Site", height=340,
-                      margin=dict(l=20, r=20, t=50, b=20))
-    )
+    try:
+        site_rev = df.groupby('site')['daily_revenue_usd'].sum().sort_values(ascending=True).reset_index()
+        colors_site = ['#34495e','#34495e','#1abc9c','#9b59b6','#e74c3c','#2ecc71','#c9a84c','#c9a84c']
+        fig2 = go.Figure(go.Bar(
+            x=site_rev['daily_revenue_usd'], y=site_rev['site'],
+            orientation='h',
+            marker=dict(color=colors_site, line=dict(color='#0a1628', width=1)),
+            text=[fmt_val(v) for v in site_rev['daily_revenue_usd']],
+            textposition='outside', textfont=dict(color='#c8d8f0', size=11),
+        ))
+        fig2.update_layout(**dark_layout("Total Revenue by Site (2020–2021)", height=380,
+                          margin=dict(l=165, r=90, t=50, b=40)),
+            xaxis=dict(title="Revenue (USD)", gridcolor='#1a3a6e', linecolor='#1a3a6e',
+                       tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0'),
+                       tickformat="$,.0f",
+                       range=[0, site_rev['daily_revenue_usd'].max() * 1.32]),
+            yaxis=dict(tickfont=dict(color='#c8d8f0')),
+        )
+    except Exception as ex:
+        fig2 = go.Figure()
+        fig2.update_layout(title=f"Site chart error: {ex}", paper_bgcolor='#0a1628',
+                           font=dict(color='red'))
+
+    try:
+        monthly = df.groupby(df['date'].dt.to_period('M'))['daily_revenue_usd'].sum().reset_index()
+        monthly['date'] = monthly['date'].astype(str)
+        fig3 = go.Figure()
+        fig3.add_trace(go.Scatter(
+            x=monthly['date'], y=monthly['daily_revenue_usd'],
+            mode='lines+markers',
+            line=dict(color='#c9a84c', width=2.5),
+            marker=dict(size=5, color='#c9a84c'),
+            fill='tozeroy', fillcolor='rgba(201,168,76,0.08)',
+        ))
+        fig3.add_shape(type="rect", x0="2020-03", x1="2020-06", y0=0, y1=1,
+                       yref="paper", fillcolor="red", opacity=0.08, line_width=0)
+        fig3.add_annotation(x="2020-04", y=0.88, yref="paper", text="COVID-19<br>Impact",
+                            showarrow=False, font=dict(color="#ff6b6b", size=10),
+                            bgcolor="rgba(10,22,40,0.65)", borderpad=3)
+        fig3.update_layout(**dark_layout("Monthly Revenue Trend (2020–2021)", height=360,
+                          margin=dict(l=80, r=40, t=50, b=80)),
+            xaxis=dict(title="Month", tickangle=45, gridcolor='#1a3a6e',
+                       tickfont=dict(color='#c8d8f0'), title_font=dict(color='#a8c8f0')),
+            yaxis=dict(title="Revenue (USD)", tickprefix="$", tickformat=",.0f",
+                       gridcolor='#1a3a6e', tickfont=dict(color='#c8d8f0'),
+                       title_font=dict(color='#a8c8f0')),
+            showlegend=False
+        )
+    except Exception as ex:
+        fig3 = go.Figure()
+        fig3.update_layout(title=f"Monthly chart error: {ex}", paper_bgcolor='#0a1628',
+                           font=dict(color='red'))
+
+    try:
+        dow_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        dow = df.groupby(df['date'].dt.day_name())['daily_revenue_usd'].mean().reindex(dow_order).reset_index()
+        dow.columns = ['day', 'avg_revenue']
+        fig4 = go.Figure(go.Bar(
+            x=dow['day'], y=dow['avg_revenue'],
+            marker=dict(color=['#c9a84c' if d == 'Sunday' else '#1e3a6e' for d in dow['day']],
+                        line=dict(color='#c9a84c', width=0.8)),
+            text=[f"${v:,.0f}" for v in dow['avg_revenue']],
+            textposition='outside', textfont=dict(color='#c8d8f0', size=11),
+        ))
+        fig4.update_layout(**dark_layout("Avg Daily Revenue by Day of Week", height=320,
+                          margin=dict(l=80, r=40, t=50, b=40)),
+            xaxis=dict(title="Day", tickfont=dict(color='#c8d8f0'),
+                       title_font=dict(color='#a8c8f0')),
+            yaxis=dict(title="Avg Revenue (USD)", tickprefix="$", tickformat=",.0f",
+                       gridcolor='#1a3a6e', tickfont=dict(color='#c8d8f0'),
+                       title_font=dict(color='#a8c8f0'),
+                       range=[0, dow['avg_revenue'].max() * 1.28])
+        )
+    except Exception as ex:
+        fig4 = go.Figure()
+        fig4.update_layout(title=f"DOW chart error: {ex}", paper_bgcolor='#0a1628',
+                           font=dict(color='red'))
+
+    try:
+        yoy = df.groupby([df['date'].dt.year, 'brand'])['daily_revenue_usd'].sum().reset_index()
+        yoy.columns = ['year', 'brand', 'revenue']
+        bc = {'Crust Co.': '#c9a84c', 'Flame & Feather': '#2ecc71',
+              'Cala Grill': '#e74c3c', 'Frostbite Creamery': '#9b59b6'}
+        fig5 = go.Figure()
+        for brand in BRANDS:
+            b = yoy[yoy['brand'] == brand]
+            fig5.add_trace(go.Bar(
+                x=b['year'].astype(str), y=b['revenue'], name=brand,
+                marker=dict(color=bc.get(brand, '#c9a84c'),
+                            line=dict(color='#0a1628', width=1)),
+                text=[fmt_val(v) for v in b['revenue']],
+                textposition='outside', textfont=dict(color='#c8d8f0', size=10),
+            ))
+        fig5.update_layout(**dark_layout("Year-on-Year Revenue by Brand", height=340,
+                          margin=dict(l=80, r=40, t=50, b=40)),
+            barmode='group',
+            xaxis=dict(title="Year", tickfont=dict(color='#c8d8f0'),
+                       title_font=dict(color='#a8c8f0')),
+            yaxis=dict(title="Revenue (USD)", tickprefix="$", tickformat=",.0f",
+                       gridcolor='#1a3a6e', tickfont=dict(color='#c8d8f0'),
+                       title_font=dict(color='#a8c8f0'))
+        )
+    except Exception as ex:
+        fig5 = go.Figure()
+        fig5.update_layout(title=f"YoY chart error: {ex}", paper_bgcolor='#0a1628',
+                           font=dict(color='red'))
+
+    try:
+        site_rev2 = df.groupby('site')['daily_revenue_usd'].sum().reset_index()
+        fig6 = go.Figure(go.Pie(
+            labels=site_rev2['site'], values=site_rev2['daily_revenue_usd'],
+            hole=0.45,
+            marker=dict(colors=['#c9a84c','#1e2d5e','#2ecc71','#e74c3c',
+                                '#9b59b6','#1abc9c','#f39c12','#34495e'],
+                        line=dict(color='#0a1628', width=2)),
+            textfont=dict(color='#ffffff', size=11),
+        ))
+        fig6.update_layout(**dark_layout("Revenue Share by Site", height=340,
+                          margin=dict(l=20, r=20, t=50, b=20)))
+    except Exception as ex:
+        fig6 = go.Figure()
+        fig6.update_layout(title=f"Pie chart error: {ex}", paper_bgcolor='#0a1628',
+                           font=dict(color='red'))
 
     return fig1, fig2, fig3, fig4, fig5, fig6
 
